@@ -10,6 +10,14 @@ export interface PresionEvolucion {
 export interface MedicamentoReceta {
   nombre: string;
   indicacion: string;
+  diasTratamiento?: number;
+}
+
+export interface TomaMedicamento {
+  id: string;
+  recetaId: string;
+  medicamentoNombre: string;
+  fechaHora: string;
 }
 
 export interface Receta {
@@ -66,6 +74,7 @@ export interface PatientRecord {
   examenesDicom: ExamenDICOM[];
   modulosEducativosCompletados?: string[];
   logAuditoria?: { accion: string, fecha: string, ip: string }[];
+  tomasMedicamentos?: TomaMedicamento[];
 }
 
 declare const __SERVER_START_TIME__: number;
@@ -100,7 +109,7 @@ class MockDatabase {
           fechaHora: '2025-10-01T10:30:00Z', 
           medico: 'Dr. Andrés Silva', 
           medicamentos: [
-            { nombre: 'Losartán 50mg', indicacion: '1 comprimido cada 12 horas' }
+            { nombre: 'Losartán 50mg', indicacion: '1 comprimido cada 12 horas', diasTratamiento: 30 }
           ] 
         },
         { 
@@ -109,8 +118,8 @@ class MockDatabase {
           fechaHora: '2026-03-10T11:15:00Z', 
           medico: 'Dr. Andrés Silva', 
           medicamentos: [
-            { nombre: 'Amlodipino 5mg', indicacion: '1 comprimido al día' },
-            { nombre: 'Atorvastatina 20mg', indicacion: '1 comprimido en la noche' }
+            { nombre: 'Amlodipino 5mg', indicacion: '1 comprimido al día', diasTratamiento: 30 },
+            { nombre: 'Atorvastatina 20mg', indicacion: '1 comprimido en la noche', diasTratamiento: 60 }
           ] 
         }
       ],
@@ -119,7 +128,10 @@ class MockDatabase {
         { id: 'ecg-2', fecha: '2026-03-10', tipo: 'Electrocardiograma Reposo', ecgData: ecgAbnormalData, resultado: 'Anormal' }
       ],
       modulosEducativosCompletados: [],
-      logAuditoria: []
+      logAuditoria: [],
+      tomasMedicamentos: [
+        { id: 'toma-1', recetaId: 'rec-2', medicamentoNombre: 'Amlodipino 5mg', fechaHora: new Date(Date.now() - 86400000).toISOString() }
+      ]
     };
   }
 
@@ -138,7 +150,8 @@ class MockDatabase {
       recetas: [],
       examenesDicom: [],
       modulosEducativosCompletados: [],
-      logAuditoria: []
+      logAuditoria: [],
+      tomasMedicamentos: []
     };
   }
 
@@ -195,11 +208,35 @@ class MockDatabase {
   }
 
   getAll(): PatientRecord[] {
-    return [...this.records];
+    return this.records;
   }
 
   getById(id: string): PatientRecord | undefined {
-    return this.records.find(r => r.id === id);
+    return this.records.find(p => p.id === id);
+  }
+
+  savePatient(patient: PatientRecord) {
+    const idx = this.records.findIndex(p => p.id === patient.id);
+    if (idx !== -1) {
+      this.records[idx] = patient;
+    } else {
+      this.records.push(patient);
+    }
+    this.saveToStorage();
+  }
+
+  marcarMedicamentoTomado(patientId: string, recetaId: string, medicamentoNombre: string) {
+    const p = this.getById(patientId);
+    if (!p) return;
+    if (!p.tomasMedicamentos) p.tomasMedicamentos = [];
+    
+    p.tomasMedicamentos.push({
+      id: `toma-${Date.now()}`,
+      recetaId,
+      medicamentoNombre,
+      fechaHora: new Date().toISOString()
+    });
+    this.savePatient(p);
   }
 
   save(record: Omit<PatientRecord, 'id' | 'fechaRegistro' | 'mediciones' | 'recetas' | 'examenesDicom'>): PatientRecord {
@@ -210,7 +247,8 @@ class MockDatabase {
       mediciones: [],
       recetas: [],
       examenesDicom: [],
-      logAuditoria: []
+      logAuditoria: [],
+      tomasMedicamentos: []
     };
     this.records.push(newRecord);
     this.saveToStorage();

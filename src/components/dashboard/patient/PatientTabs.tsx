@@ -614,10 +614,34 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
                           <span className="text-sm font-medium">{new Date(r.fechaHora).toLocaleString()}</span>
                         </div>
                         <p className="text-xs text-muted-foreground mb-2">Por: {r.medico}</p>
-                        <div className="flex gap-2 flex-wrap">
-                          {(r.medicamentos || []).map((m, i) => (
-                            <Badge key={i} variant="outline" className="text-[10px]">{m.nombre}</Badge>
-                          ))}
+                        <div className="flex gap-3 flex-wrap">
+                          {(r.medicamentos || []).map((m, i) => {
+                            let adherenciaNode = null;
+                            if (m.diasTratamiento) {
+                              const tomas = currentPatient.tomasMedicamentos || [];
+                              const tomasMed = tomas.filter(t => t.recetaId === r.id && t.medicamentoNombre === m.nombre);
+                              const tomasUnicasDias = new Set(tomasMed.map(t => t.fechaHora.split('T')[0])).size;
+                              const progreso = Math.round((tomasUnicasDias / m.diasTratamiento) * 100);
+                              const pct = Math.min(progreso, 100);
+                              
+                              let colorClass = "text-amber-600 bg-amber-50 border-amber-200";
+                              if (pct >= 80) colorClass = "text-emerald-600 bg-emerald-50 border-emerald-200";
+                              else if (pct < 40) colorClass = "text-red-600 bg-red-50 border-red-200";
+                              
+                              adherenciaNode = (
+                                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[10px] font-bold ${colorClass}`}>
+                                  <span>{pct}% Adherencia</span>
+                                  <span className="text-muted-foreground font-normal">({tomasUnicasDias}/{m.diasTratamiento}d)</span>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div key={i} className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-[10px]">{m.nombre}</Badge>
+                                {adherenciaNode}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                       <div className="shrink-0">

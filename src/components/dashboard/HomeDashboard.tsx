@@ -333,7 +333,7 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
             </div>
             <div className="flex items-center gap-2">
               <Select value={atrasoMeses.toString()} onValueChange={(v) => setAtrasoMeses(Number(v))}>
-                <SelectTrigger className="w-[140px] h-8 text-xs bg-white text-dashboard-red-fg">
+                <SelectTrigger className="w-[140px] h-8 text-xs bg-transparent text-dashboard-red-fg">
                   <SelectValue placeholder="Filtro de Atraso" />
                 </SelectTrigger>
                 <SelectContent>
@@ -342,7 +342,7 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
                   <SelectItem value="12">Atraso &gt; 12 meses</SelectItem>
                 </SelectContent>
               </Select>
-              <Badge className="bg-white text-dashboard-red shrink-0 border-0 pointer-events-none">
+              <Badge className="bg-white/20 text-dashboard-red-fg shrink-0 border-0 pointer-events-none">
                 {pacientesAtrasados.length} casos
               </Badge>
             </div>

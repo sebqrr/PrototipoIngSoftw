@@ -133,21 +133,14 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply text-foreground;
-    background-color: #f8fafc; /* slate-50 */
-    background-image: 
-      radial-gradient(at 0% 0%, hsla(210, 100%, 94%, 0.8) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(160, 100%, 95%, 0.8) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(280, 100%, 96%, 0.8) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsla(220, 100%, 94%, 0.8) 0px, transparent 50%);
-    background-attachment: fixed;
+    @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
   }
 }
 
-@layer base {
+@layer utilities {
   * {
     border-color: var(--color-border);
     outline-color: color-mix(in srgb, var(--color-ring) 50%, transparent);

@@ -77,6 +77,17 @@ export default function PortalPaciente() {
     setPacientes(db.getAll());
   };
 
+  const handleMarcarTomado = (recetaId: string, medicamentoNombre: string) => {
+    db.marcarMedicamentoTomado(paciente.id, recetaId, medicamentoNombre);
+    setPacientes(db.getAll());
+  };
+
+  const haSidoTomadoHoy = (medicamentoNombre: string) => {
+    const tomas = paciente.tomasMedicamentos || [];
+    const hoy = new Date().toISOString().split('T')[0];
+    return tomas.some(t => t.medicamentoNombre === medicamentoNombre && t.fechaHora.startsWith(hoy));
+  };
+
   if (!paciente) return null;
 
   const mediciones = paciente.mediciones || [];
@@ -166,7 +177,7 @@ export default function PortalPaciente() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Registro Domiciliario (HU-07) */}
-        <Card className="shadow-sm border-border overflow-hidden">
+        <Card className="shadow-sm border-transparent overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
           <CardHeader className="p-4 pt-5 bg-violet-500 text-white border-b border-border">
             <CardTitle className="flex items-center gap-2">
               <Home className="w-5 h-5" /> Registro en Casa
@@ -197,15 +208,33 @@ export default function PortalPaciente() {
                 <Bell className="w-4 h-4 text-amber-500" /> Próximos Recordatorios
               </h4>
               <ul className="text-sm space-y-2">
-                {paciente.recetas.length > 0 ? paciente.recetas[0].medicamentos.map((med, i) => (
-                  <li key={i} className="bg-amber-50 p-3 rounded-lg border border-amber-100 flex items-start gap-3">
-                    <CheckCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="font-bold text-amber-900 leading-none">{med.nombre}</p>
-                      <p className="text-xs font-medium text-amber-700/80 mt-1">{med.indicacion}</p>
-                    </div>
-                  </li>
-                )) : (
+                {paciente.recetas.length > 0 ? paciente.recetas[paciente.recetas.length - 1].medicamentos.map((med, i) => {
+                  const tomadoHoy = haSidoTomadoHoy(med.nombre);
+                  return (
+                    <li key={i} className={`p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${tomadoHoy ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-100'}`}>
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className={`h-5 w-5 mt-0.5 shrink-0 ${tomadoHoy ? 'text-emerald-500' : 'text-amber-500'}`} />
+                        <div>
+                          <p className={`font-bold leading-none ${tomadoHoy ? 'text-emerald-900 line-through opacity-70' : 'text-amber-900'}`}>{med.nombre}</p>
+                          <p className={`text-xs font-medium mt-1 ${tomadoHoy ? 'text-emerald-700/80' : 'text-amber-700/80'}`}>{med.indicacion}</p>
+                        </div>
+                      </div>
+                      {!tomadoHoy && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="bg-white text-amber-700 border-amber-200 hover:bg-amber-100 w-full sm:w-auto"
+                          onClick={() => handleMarcarTomado(paciente.recetas[paciente.recetas.length - 1].id, med.nombre)}
+                        >
+                          Marcar Tomado
+                        </Button>
+                      )}
+                      {tomadoHoy && (
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-md text-center sm:text-left">Tomado hoy</span>
+                      )}
+                    </li>
+                  );
+                }) : (
                   <p className="text-xs font-medium text-muted-foreground p-3 bg-muted/20 rounded-lg border border-border">No tienes medicamentos activos en tu receta.</p>
                 )}
               </ul>
