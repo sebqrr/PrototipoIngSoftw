@@ -124,15 +124,13 @@ export default function PortalPaciente() {
       {/* Contenedor Oculto para capturar el gráfico en el PDF */}
       <div className="absolute -left-[9999px] top-0 w-[800px] h-[400px] bg-white p-8" id="charts-export-container">
         <h3 className="text-xl font-bold mb-4 text-slate-800">Evolución de Presión Arterial</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={[...paciente.mediciones].reverse()}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="fecha" />
-            <YAxis domain={['auto', 'auto']} />
-            <Line type="monotone" dataKey="presionSistolica" stroke="#ef4444" strokeWidth={2} name="Sistólica" />
-            <Line type="monotone" dataKey="presionDiastolica" stroke="#3b82f6" strokeWidth={2} name="Diastólica" />
-          </LineChart>
-        </ResponsiveContainer>
+        <LineChart width={736} height={300} data={[...paciente.mediciones].reverse()}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="fecha" />
+          <YAxis domain={['auto', 'auto']} />
+          <Line type="monotone" dataKey="presionSistolica" stroke="#ef4444" strokeWidth={2} name="Sistólica" isAnimationActive={false} />
+          <Line type="monotone" dataKey="presionDiastolica" stroke="#3b82f6" strokeWidth={2} name="Diastólica" isAnimationActive={false} />
+        </LineChart>
       </div>
 
       {/* Resumen Clínico */}
