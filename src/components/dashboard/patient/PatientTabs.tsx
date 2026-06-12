@@ -13,6 +13,7 @@ import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import { RecetaPDF } from '@/components/pdf/RecetaPDF';
 import { EcgPDF } from '@/components/pdf/EcgPDF';
 import { FichaPDF } from '@/components/pdf/FichaPDF';
+import { Calendar } from '@/components/ui/calendar';
 import { toPng } from 'html-to-image';
 import { ecgNormalData, ecgAbnormalData } from '@/db/ecgSamples';
 import { db } from '@/db/mockDb';
@@ -49,6 +50,7 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
   const [examResultado, setExamResultado] = useState<'Normal' | 'Anormal' | ''>('Normal');
   const [examFecha, setExamFecha] = useState(new Date().toISOString().split('T')[0]);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedAdherenceDate, setSelectedAdherenceDate] = useState<Date | undefined>(new Date());
 
   const handleExportPDF = async () => {
     setIsExporting(true);
@@ -193,11 +195,12 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
   return (
     <div className="w-full">
       <Tabs defaultValue="graficos" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-muted/50 p-1">
+        <TabsList className="grid w-full grid-cols-6 bg-muted/50 p-1">
           <TabsTrigger value="graficos" className="flex gap-2 text-xs"><TrendingUp className="h-4 w-4" /> Evolución</TabsTrigger>
           <TabsTrigger value="score2" className="flex gap-2 text-xs"><Heart className="h-4 w-4" /> SCORE2</TabsTrigger>
           <TabsTrigger value="historial" className="flex gap-2 text-xs"><Activity className="h-4 w-4" /> Tabular</TabsTrigger>
           <TabsTrigger value="recetas" className="flex gap-2 text-xs"><FileText className="h-4 w-4" /> Recetas</TabsTrigger>
+          <TabsTrigger value="medicacion" className="flex gap-2 text-xs"><Pill className="h-4 w-4" /> Medicación</TabsTrigger>
           <TabsTrigger value="examenes" className="flex gap-2 text-xs"><ShieldCheck className="h-4 w-4" /> Exámenes</TabsTrigger>
         </TabsList>
 
@@ -463,6 +466,131 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
           </Card>
         </TabsContent>
 
+        <TabsContent value="medicacion" className="mt-4 space-y-6 fade-in">
+          <Card className="shadow-sm">
+            <CardHeader className="p-6 pb-5 border-b">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Pill className="h-5 w-5 text-emerald-500" /> Monitoreo de Adherencia (Calendario)
+              </CardTitle>
+              <CardDescription>
+                Registro de días en los que el paciente ha tomado su medicación.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              {(!currentPatient.recetas || currentPatient.recetas.length === 0) ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No hay medicamentos recetados para este paciente.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-muted-foreground">Medicamentos Activos (Última Receta)</h3>
+                    {currentPatient.recetas[currentPatient.recetas.length - 1].medicamentos.map((med, i) => {
+                      const tomas = currentPatient.tomasMedicamentos?.filter(t => t.recetaId === currentPatient.recetas[currentPatient.recetas.length - 1].id && t.medicamentoNombre === med.nombre) || [];
+                      const uniqueDays = new Set(tomas.map(t => t.fechaHora.split('T')[0])).size;
+                      const diasTratamiento = med.diasTratamiento || 30;
+                      
+                      const fechaReceta = new Date(currentPatient.recetas[currentPatient.recetas.length - 1].fechaHora);
+                      const hoy = new Date();
+                      let diasTranscurridos = Math.floor((hoy.getTime() - fechaReceta.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                      diasTranscurridos = Math.min(diasTranscurridos, diasTratamiento);
+                      if (diasTranscurridos < 1) diasTranscurridos = 1;
+
+                      const adherenciaActual = Math.min(Math.round((uniqueDays / diasTranscurridos) * 100), 100);
+                      const adherenciaTotal = Math.min(Math.round((uniqueDays / diasTratamiento) * 100), 100);
+                      
+                      return (
+                        <div key={i} className="p-4 border rounded-xl bg-slate-50 flex items-center justify-between">
+                          <div>
+                            <p className="font-bold text-foreground">{med.nombre}</p>
+                            <p className="text-xs text-muted-foreground">{med.indicacion}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-xl font-black ${adherenciaActual >= 80 ? 'text-emerald-500' : adherenciaActual > 40 ? 'text-amber-500' : 'text-red-500'}`}>{adherenciaActual}%</span>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Adh. a la fecha</p>
+                            <p className="text-[10px] mt-0.5 font-bold text-muted-foreground">Total: {adherenciaTotal}%</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-4">Calendario de Tomas (Mes Actual)</h3>
+                    <div className="border rounded-xl p-4 bg-white inline-block shadow-sm">
+                      {(() => {
+                        const tomasPorDia = currentPatient.tomasMedicamentos?.reduce((acc, t) => {
+                          const dia = t.fechaHora.split('T')[0];
+                          if (!acc[dia]) acc[dia] = [];
+                          acc[dia].push(t.medicamentoNombre);
+                          return acc;
+                        }, {} as Record<string, string[]>) || {};
+
+                        const medsActivos = currentPatient.recetas[currentPatient.recetas.length - 1]?.medicamentos || [];
+                        const medsNombres = medsActivos.map(m => m.nombre);
+
+                        const diasCompletos = Object.keys(tomasPorDia).filter(dia => medsNombres.every(m => tomasPorDia[dia].includes(m))).map(d => new Date(`${d}T12:00:00`));
+                        const diasParciales = Object.keys(tomasPorDia).filter(dia => !medsNombres.every(m => tomasPorDia[dia].includes(m)) && tomasPorDia[dia].length > 0).map(d => new Date(`${d}T12:00:00`));
+
+                        const pad = (n: number) => n.toString().padStart(2, '0');
+                        const formatLocal = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+                        return (
+                          <>
+                            <Calendar 
+                              mode="single"
+                              selected={selectedAdherenceDate}
+                              onSelect={setSelectedAdherenceDate}
+                              className="rounded-md"
+                              modifiers={{
+                                completo: diasCompletos,
+                                parcial: diasParciales
+                              }}
+                              modifiersStyles={{
+                                completo: { backgroundColor: '#10b981', color: 'white', fontWeight: 'bold' },
+                                parcial: { backgroundColor: '#f59e0b', color: 'white', fontWeight: 'bold' }
+                              }}
+                            />
+                            {selectedAdherenceDate && (
+                              <div className="mt-4 pt-4 border-t">
+                                <h4 className="text-xs font-bold mb-3 text-muted-foreground uppercase">Detalle del {selectedAdherenceDate.toLocaleDateString()}</h4>
+                                {(() => {
+                                  // Asumimos que los registros se guardan en ISO (UTC/local) pero como cadena, y al mapearlos por dia, podemos compararlo con la fecha local.
+                                  // Aquí simplificamos el mapeo considerando que formatLocal() nos da el 'YYYY-MM-DD' en zona local.
+                                  // Sin embargo, si tomasPorDia se agrupó por 'T'[0], que es UTC, podría haber un pequeño desfase. 
+                                  // Para este prototipo, utilizaremos formatLocal(selectedAdherenceDate).
+                                  const d = formatLocal(selectedAdherenceDate);
+                                  const tomados = tomasPorDia[d] || [];
+                                  
+                                  if (medsNombres.length === 0) return <p className="text-xs text-muted-foreground">No hay medicación activa.</p>;
+                                  
+                                  return (
+                                    <ul className="space-y-2">
+                                      {medsNombres.map(m => {
+                                        const fueTomado = tomados.includes(m);
+                                        return (
+                                          <li key={m} className="flex items-start gap-2 text-xs bg-slate-50 p-2 rounded border">
+                                            {fueTomado ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0"/> : <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0"/>}
+                                            <div>
+                                              <span className={`block font-bold leading-none mb-1 ${fueTomado ? "text-emerald-700" : "text-red-700"}`}>{m}</span>
+                                              <span className="text-muted-foreground">{fueTomado ? "Tomado" : "No registrado / Omitido"}</span>
+                                            </div>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  );
+                                })()}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="examenes" className="mt-4 space-y-6 fade-in">
           <Card className="shadow-sm">
             <CardHeader className="p-6 pb-5 flex flex-row items-center justify-between">
@@ -475,10 +603,8 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
                 </CardDescription>
               </div>
               <Dialog open={examOpen} onOpenChange={setExamOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    + Registrar Examen (Simulado)
-                  </Button>
+                <DialogTrigger render={<Button variant="outline" size="sm" className="gap-2" />}>
+                  + Registrar Examen (Simulado)
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -621,17 +747,23 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
                               const tomas = currentPatient.tomasMedicamentos || [];
                               const tomasMed = tomas.filter(t => t.recetaId === r.id && t.medicamentoNombre === m.nombre);
                               const tomasUnicasDias = new Set(tomasMed.map(t => t.fechaHora.split('T')[0])).size;
-                              const progreso = Math.round((tomasUnicasDias / m.diasTratamiento) * 100);
-                              const pct = Math.min(progreso, 100);
+                              const diasTratamiento = m.diasTratamiento || 30;
+                              
+                              const fechaReceta = new Date(r.fechaHora);
+                              const hoy = new Date();
+                              let diasTranscurridos = Math.floor((hoy.getTime() - fechaReceta.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                              diasTranscurridos = Math.min(diasTranscurridos, diasTratamiento);
+                              if (diasTranscurridos < 1) diasTranscurridos = 1;
+
+                              const adherenciaActual = Math.min(Math.round((tomasUnicasDias / diasTranscurridos) * 100), 100);
                               
                               let colorClass = "text-amber-600 bg-amber-50 border-amber-200";
-                              if (pct >= 80) colorClass = "text-emerald-600 bg-emerald-50 border-emerald-200";
-                              else if (pct < 40) colorClass = "text-red-600 bg-red-50 border-red-200";
+                              if (adherenciaActual >= 80) colorClass = "text-emerald-600 bg-emerald-50 border-emerald-200";
+                              else if (adherenciaActual < 40) colorClass = "text-red-600 bg-red-50 border-red-200";
                               
                               adherenciaNode = (
                                 <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[10px] font-bold ${colorClass}`}>
-                                  <span>{pct}% Adherencia</span>
-                                  <span className="text-muted-foreground font-normal">({tomasUnicasDias}/{m.diasTratamiento}d)</span>
+                                  <span>{adherenciaActual}% Adherencia a la fecha</span>
                                 </div>
                               );
                             }

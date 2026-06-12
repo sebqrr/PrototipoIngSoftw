@@ -22,16 +22,16 @@ export function PatientConsultation({ onRecordSaved }: PatientConsultationProps)
   const currentPatient = !isNew ? db.getById(currentPatientId!) : null;
 
   // Estado para la receta
-  const [medicamentosReceta, setMedicamentosReceta] = useState([{ nombre: '', indicacion: '' }]);
+  const [medicamentosReceta, setMedicamentosReceta] = useState<{nombre: string, indicacion: string, diasTratamiento?: number}[]>([{ nombre: '', indicacion: '', diasTratamiento: 30 }]);
   const [recetaOpen, setRecetaOpen] = useState(false);
   const [folioActual, setFolioActual] = useState(() => Math.random().toString(36).substring(2, 10).toUpperCase());
   const [fechaHoraReceta, setFechaHoraReceta] = useState(() => new Date().toISOString());
 
-  const handleAddMed = () => setMedicamentosReceta([...medicamentosReceta, { nombre: '', indicacion: '' }]);
+  const handleAddMed = () => setMedicamentosReceta([...medicamentosReceta, { nombre: '', indicacion: '', diasTratamiento: 30 }]);
   const handleRemoveMed = (index: number) => setMedicamentosReceta(medicamentosReceta.filter((_, i) => i !== index));
-  const updateMed = (index: number, field: 'nombre' | 'indicacion', value: string) => {
+  const updateMed = (index: number, field: 'nombre' | 'indicacion' | 'diasTratamiento', value: string | number) => {
     const newMeds = [...medicamentosReceta];
-    newMeds[index][field] = value;
+    newMeds[index] = { ...newMeds[index], [field]: value };
     setMedicamentosReceta(newMeds);
   };
 
@@ -87,6 +87,10 @@ export function PatientConsultation({ onRecordSaved }: PatientConsultationProps)
                         <div className="flex-grow space-y-2">
                           <Input placeholder="Nombre del medicamento (Ej. Losartán 50mg)" value={med.nombre} onChange={(e) => updateMed(index, 'nombre', e.target.value)} />
                           <Input placeholder="Indicación (Ej. 1 comprimido cada 12 horas)" value={med.indicacion} onChange={(e) => updateMed(index, 'indicacion', e.target.value)} />
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">Días de Tratamiento:</span>
+                            <Input type="number" min="1" max="365" placeholder="Ej. 30" value={med.diasTratamiento || ''} onChange={(e) => updateMed(index, 'diasTratamiento', parseInt(e.target.value) || 0)} className="w-24" />
+                          </div>
                         </div>
                         {medicamentosReceta.length > 1 && (
                           <Button variant="ghost" size="icon" onClick={() => handleRemoveMed(index)} className="text-red-500 hover:text-red-700 shrink-0">✕</Button>
@@ -112,7 +116,7 @@ export function PatientConsultation({ onRecordSaved }: PatientConsultationProps)
                           onRecordSaved();
                           setTimeout(() => {
                             setRecetaOpen(false);
-                            setMedicamentosReceta([{ nombre: '', indicacion: '' }]);
+                            setMedicamentosReceta([{ nombre: '', indicacion: '', diasTratamiento: 30 }]);
                             setFolioActual(Math.random().toString(36).substring(2, 10).toUpperCase());
                             setFechaHoraReceta(new Date().toISOString());
                           }, 500);

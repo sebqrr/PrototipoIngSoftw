@@ -74,12 +74,12 @@ export default function PortalPaciente() {
     });
     setSis('');
     setDia('');
-    setPacientes(db.getAll());
+    setPacientes([...db.getAll()]);
   };
 
   const handleMarcarTomado = (recetaId: string, medicamentoNombre: string) => {
     db.marcarMedicamentoTomado(paciente.id, recetaId, medicamentoNombre);
-    setPacientes(db.getAll());
+    setPacientes([...db.getAll()]);
   };
 
   const haSidoTomadoHoy = (medicamentoNombre: string) => {
@@ -177,7 +177,7 @@ export default function PortalPaciente() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Registro Domiciliario (HU-07) */}
-        <Card className="shadow-sm border-transparent overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+        <Card className="shadow-sm border-transparent overflow-hidden">
           <CardHeader className="p-4 pt-5 bg-violet-500 text-white border-b border-border">
             <CardTitle className="flex items-center gap-2">
               <Home className="w-5 h-5" /> Registro en Casa
