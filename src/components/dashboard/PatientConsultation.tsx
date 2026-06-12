@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePatient } from '@/context/PatientContext';
 import { db } from '@/db/mockDb';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,12 @@ export function PatientConsultation({ onRecordSaved }: PatientConsultationProps)
   const [recetaOpen, setRecetaOpen] = useState(false);
   const [folioActual, setFolioActual] = useState(() => Math.random().toString(36).substring(2, 10).toUpperCase());
   const [fechaHoraReceta, setFechaHoraReceta] = useState(() => new Date().toISOString());
+
+  useEffect(() => {
+    if (currentPatient && !isNew) {
+      db.logAction('Médico (Dr. Andrés Silva)', 'Acceso a Ficha Clínica', `Visualizó la ficha del paciente ${currentPatient.rut}.`, '10.0.0.45');
+    }
+  }, [currentPatient?.id, isNew]);
 
   const handleAddMed = () => setMedicamentosReceta([...medicamentosReceta, { nombre: '', indicacion: '', diasTratamiento: 30 }]);
   const handleRemoveMed = (index: number) => setMedicamentosReceta(medicamentosReceta.filter((_, i) => i !== index));
@@ -113,6 +119,7 @@ export function PatientConsultation({ onRecordSaved }: PatientConsultationProps)
                             medico: "Dr. Andrés Silva",
                             medicamentos: medicamentosReceta.filter(m => m.nombre)
                           });
+                          db.logAction('Médico (Dr. Andrés Silva)', 'Emisión de Receta', `Emitió receta folio ${folioActual} para paciente ${currentPatient.rut}.`, '10.0.0.45');
                           onRecordSaved();
                           setTimeout(() => {
                             setRecetaOpen(false);

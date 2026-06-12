@@ -27,6 +27,10 @@ export default function PortalPaciente() {
     if (db.getAll().length < 2) {
       localStorage.removeItem('serverStartTime');
       window.location.reload();
+    } else {
+      const id = storedId || pacientes[0]?.id;
+      const pacienteLog = pacientes.find(p => p.id === id);
+      db.logAction(`Paciente (${pacienteLog?.rut})`, 'Acceso a Portal', 'Paciente inició sesión en el portal y visualizó su ficha.', '192.168.1.55');
     }
   }, []);
 
@@ -50,7 +54,7 @@ export default function PortalPaciente() {
       link.click();
       URL.revokeObjectURL(url);
 
-      db.registrarAuditoriaDescarga(pacienteTarget.id);
+      db.logAction(`Paciente (${pacienteTarget.rut})`, 'Descarga de Datos Clínicos', `Paciente descargó copia de historia clínica PDF.`, '192.168.1.55');
       alert("Descarga autorizada e iniciada.\nEvento registrado con éxito en el Log de Auditoría Clínica.");
     } catch (error) {
       console.error("Error generando PDF:", error);
@@ -72,6 +76,7 @@ export default function PortalPaciente() {
       presionDiastolica: Number(dia),
       profesionalRegistro: 'Auto-reporte (Portal)'
     });
+    db.logAction(`Paciente (${paciente.rut})`, 'Registro Domiciliario', `Añadió nueva presión arterial: ${sis}/${dia} mmHg.`, '192.168.1.55');
     setSis('');
     setDia('');
     setPacientes([...db.getAll()]);

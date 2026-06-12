@@ -10,7 +10,7 @@ import {
   SidebarHeader,
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import { HeartPulse, LayoutDashboard, UserPlus, CalendarClock, FileBarChart, BookOpen } from 'lucide-react';
+import { HeartPulse, LayoutDashboard, UserPlus, CalendarClock, FileBarChart, BookOpen, ShieldAlert } from 'lucide-react';
 
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -81,6 +81,12 @@ export function DashboardSidebar() {
               <SidebarMenuButton isActive={location.pathname === '/guias'} onClick={() => handleNavigation('/guias')} tooltip="Guías Clínicas">
                 <BookOpen className="h-4 w-4" />
                 <span>Guías Clínicas</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={location.pathname === '/auditoria'} onClick={() => handleNavigation('/auditoria')} tooltip="Auditoría y Logs">
+                <ShieldAlert className="h-4 w-4" />
+                <span>Auditoría y Logs</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

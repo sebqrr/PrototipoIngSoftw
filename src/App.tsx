@@ -19,6 +19,7 @@ import PacientesPage from './pages/medico/PacientesPage';
 import AgendaPage from './pages/medico/AgendaPage';
 import ReportesPage from './pages/medico/ReportesPage';
 import GuiasPage from './pages/medico/GuiasPage';
+import AuditoriaPage from './pages/medico/AuditoriaPage';
 
 // Componente para proteger las rutas
 function ProtectedRoutes() {
@@ -47,6 +48,7 @@ function ProtectedRoutes() {
           <Route path="agenda" element={<AgendaPage />} />
           <Route path="reportes" element={<ReportesPage />} />
           <Route path="guias" element={<GuiasPage />} />
+          <Route path="auditoria" element={<AuditoriaPage />} />
         </Route>
       )}
 

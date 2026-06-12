@@ -60,6 +60,15 @@ export interface Medicion {
   profesionalRegistro?: string;
 }
 
+export interface AuditLog {
+  id: string;
+  fechaHora: string;
+  actor: string;
+  accion: string;
+  detalles: string;
+  ip: string;
+}
+
 export interface PatientRecord {
   id: string;
   rut: string;
@@ -82,6 +91,7 @@ declare const __SERVER_START_TIME__: number;
 class MockDatabase {
   private records: PatientRecord[] = [];
   private citas: CitaMedica[] = [];
+  private logs: AuditLog[] = [];
 
   constructor() {
     this.loadFromStorage();
@@ -182,6 +192,7 @@ class MockDatabase {
       // El servidor sigue siendo el mismo, cargar datos persistentes
       const storedData = localStorage.getItem('patientsDb');
       const storedCitas = localStorage.getItem('citasDb');
+      const storedLogs = localStorage.getItem('logsDb');
       
       if (storedData) {
         this.records = JSON.parse(storedData);
@@ -198,6 +209,12 @@ class MockDatabase {
           { id: 'c2', patientId: '1', fecha: today, hora: '10:30', estado: 'en_curso' }
         ];
       }
+
+      if (storedLogs) {
+        this.logs = JSON.parse(storedLogs);
+      } else {
+        this.logs = [];
+      }
       this.saveToStorage();
     }
   }
@@ -205,6 +222,7 @@ class MockDatabase {
   private saveToStorage() {
     localStorage.setItem('patientsDb', JSON.stringify(this.records));
     localStorage.setItem('citasDb', JSON.stringify(this.citas));
+    localStorage.setItem('logsDb', JSON.stringify(this.logs));
   }
 
   getAll(): PatientRecord[] {
@@ -212,7 +230,35 @@ class MockDatabase {
   }
 
   getById(id: string): PatientRecord | undefined {
-    return this.records.find(p => p.id === id);
+    return this.records.find(r => r.id === id);
+  }
+
+  getLogs(): AuditLog[] {
+    return this.logs;
+  }
+
+  logAction(actor: string, accion: string, detalles: string, ip: string = '192.168.1.100') {
+    // Prevenir duplicados debido a React StrictMode (mismo log en menos de 2 segundos)
+    const now = Date.now();
+    const isDuplicate = this.logs.some(l => 
+      l.actor === actor && 
+      l.accion === accion && 
+      l.detalles === detalles &&
+      (now - new Date(l.fechaHora).getTime()) < 2000
+    );
+
+    if (isDuplicate) return;
+
+    const newLog: AuditLog = {
+      id: Math.random().toString(36).substring(2, 10),
+      fechaHora: new Date().toISOString(),
+      actor,
+      accion,
+      detalles,
+      ip
+    };
+    this.logs.unshift(newLog); // Add to beginning
+    this.saveToStorage();
   }
 
   savePatient(patient: PatientRecord) {
