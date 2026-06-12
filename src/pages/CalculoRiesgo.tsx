@@ -1,9 +1,27 @@
-import React, { useState } from 'react';
 import { ShieldAlert, Info, ArrowRight } from 'lucide-react';
+import { usePatient } from '../context/PatientContext';
+import { Navigate } from 'react-router-dom';
+
+type NivelRiesgo = 'BAJO' | 'MODERADO' | 'ALTO' | 'MUY_ALTO';
 
 export default function CalculoRiesgo() {
-  // En una versión final, estos datos vendrían del estado global o de la API tras guardar en HU-01
-  const [riesgoNivel] = useState<'BAJO' | 'MODERADO' | 'ALTO' | 'MUY_ALTO'>('ALTO');
+  const { currentPatient } = usePatient();
+
+  // Redirigir a inicio si no hay paciente seleccionado
+  if (!currentPatient) {
+    return <Navigate to="/" />;
+  }
+
+  // Lógica simplificada de cálculo de riesgo SCORE2
+  const calcularNivelRiesgo = (): NivelRiesgo => {
+    const { edad, presionSistolica } = currentPatient;
+    if (edad >= 65 && presionSistolica >= 160) return 'MUY_ALTO';
+    if (edad >= 60 || presionSistolica >= 140) return 'ALTO';
+    if (edad >= 50 || presionSistolica >= 130) return 'MODERADO';
+    return 'BAJO';
+  };
+
+  const riesgoNivel = calcularNivelRiesgo();
 
   const configuracionRiesgo = {
     BAJO: { color: 'bg-green-100 text-green-800 border-green-200', titulo: 'Riesgo Bajo (< 1%)' },
@@ -17,7 +35,7 @@ export default function CalculoRiesgo() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Motor de Estratificación SCORE2</h2>
         <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full border border-blue-200">
-          Paciente: Juan Pérez (55 años)
+          Paciente: {currentPatient.nombre} ({currentPatient.edad} años)
         </span>
       </div>
 
@@ -38,19 +56,19 @@ export default function CalculoRiesgo() {
         <p className="text-gray-600 mb-4">
           El nivel de riesgo se ha calculado utilizando el modelo matemático <strong>SCORE2</strong>, calibrado para regiones de riesgo cardiovascular alto.
         </p>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
             <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Variables Ponderadas</h4>
             <ul className="space-y-2 text-gray-700 font-medium">
-              <li className="flex justify-between"><span>Edad:</span> <span>55 años</span></li>
-              <li className="flex justify-between"><span>Sexo:</span> <span>Masculino</span></li>
-              <li className="flex justify-between"><span>Tabaquismo:</span> <span>No fumador</span></li>
-              <li className="flex justify-between text-orange-600"><span>P. Arterial Sistólica:</span> <span>145 mmHg</span></li>
-              <li className="flex justify-between"><span>Colesterol no-HDL:</span> <span>130 mg/dL</span></li>
+              <li className="flex justify-between"><span>Edad:</span> <span>{currentPatient.edad} años</span></li>
+              <li className="flex justify-between"><span>Sexo:</span> <span>{currentPatient.sexo === 'M' ? 'Masculino' : 'Femenino'}</span></li>
+              <li className="flex justify-between"><span>Tabaquismo:</span> <span>{currentPatient.tabaquismo ? 'Fumador' : 'No fumador'}</span></li>
+              <li className="flex justify-between text-orange-600"><span>P. Arterial Sistólica:</span> <span>{currentPatient.presionSistolica} mmHg</span></li>
+              <li className="flex justify-between"><span>Colesterol no-HDL:</span> <span>{currentPatient.colesterolNoHDL || 'No registrado'} mg/dL</span></li>
             </ul>
           </div>
-          
+
           <div className="flex flex-col justify-center space-y-3">
             <button className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-medium">
               Ver Sugerencias Clínicas <ArrowRight className="w-4 h-4" />

@@ -1,0 +1,267 @@
+export type Sexo = 'M' | 'F';
+import { ecgNormalData, ecgAbnormalData } from './ecgSamples';
+
+export interface PresionEvolucion {
+  fecha: string;
+  sistolica: number;
+  diastolica: number;
+}
+
+export interface MedicamentoReceta {
+  nombre: string;
+  indicacion: string;
+}
+
+export interface Receta {
+  id: string;
+  folio: string;
+  fechaHora: string;
+  medico: string;
+  medicamentos: MedicamentoReceta[];
+}
+
+export interface ExamenDICOM {
+  id: string;
+  fecha: string;
+  tipo: string;
+  imageUrl?: string;
+  ecgData?: number[];
+  resultado?: 'Normal' | 'Anormal';
+}
+
+export interface CitaMedica {
+  id: string;
+  patientId: string;
+  fecha: string; // YYYY-MM-DD
+  hora: string; // HH:mm
+  estado: 'pendiente' | 'completada' | 'en_curso' | 'ausente';
+}
+
+export interface Medicion {
+  id: string;
+  fecha: string;
+  peso: number;
+  talla: number;
+  presionSistolica: number;
+  presionDiastolica: number;
+  colesterolNoHDL?: number;
+  colesterol?: number;
+  frecuenciaCardiaca?: number;
+  hba1c?: number;
+  comentarioMedico?: string;
+  profesionalRegistro?: string;
+}
+
+export interface PatientRecord {
+  id: string;
+  rut: string;
+  nombre: string;
+  fechaNacimiento: string;
+  sexo: Sexo;
+  tabaquismo?: boolean;
+  fechaRegistro: string;
+  
+  mediciones: Medicion[];
+  recetas: Receta[];
+  examenesDicom: ExamenDICOM[];
+}
+
+declare const __SERVER_START_TIME__: number;
+
+class MockDatabase {
+  private records: PatientRecord[] = [];
+  private citas: CitaMedica[] = [];
+
+  constructor() {
+    this.loadFromStorage();
+  }
+
+  private getInitialPatient(): PatientRecord {
+    return {
+      id: '1',
+      rut: '12.345.678-9',
+      nombre: 'Juan Pérez',
+      fechaNacimiento: '1971-05-15',
+      sexo: 'M',
+      tabaquismo: false,
+      fechaRegistro: new Date().toISOString(),
+      mediciones: [
+        { id: 'm1', fecha: '2025-10-01', peso: 88, talla: 1.75, presionSistolica: 155, presionDiastolica: 95, colesterol: 135, frecuenciaCardiaca: 82, hba1c: 6.8, comentarioMedico: 'Paciente ingresa por control preventivo. Se detecta hipertensión no tratada.', profesionalRegistro: 'Dr. Andrés Silva' },
+        { id: 'm2', fecha: '2025-12-15', peso: 87, talla: 1.75, presionSistolica: 150, presionDiastolica: 92, colesterol: 130, frecuenciaCardiaca: 78, hba1c: 6.7, comentarioMedico: 'Baja leve de peso, persiste hipertensión grado 1.', profesionalRegistro: 'Dr. Andrés Silva' },
+        { id: 'm3', fecha: '2026-03-10', peso: 86, talla: 1.75, presionSistolica: 148, presionDiastolica: 90, colesterol: 125, frecuenciaCardiaca: 76, hba1c: 6.5, comentarioMedico: 'Responde bien a la medicación inicial, ajuste de dosis.', profesionalRegistro: 'Dr. Andrés Silva' },
+        { id: 'm4', fecha: new Date().toISOString().split('T')[0], peso: 85, talla: 1.75, presionSistolica: 145, presionDiastolica: 90, colesterol: 120, frecuenciaCardiaca: 72, hba1c: 6.4, comentarioMedico: 'Mejora en parámetros lipídicos y peso. Se recomienda mantener dieta y ejercicio.', profesionalRegistro: 'Dr. Andrés Silva' }
+      ],
+      recetas: [
+        { 
+          id: 'rec-1', 
+          folio: 'FOL-0001', 
+          fechaHora: '2025-10-01T10:30:00Z', 
+          medico: 'Dr. Andrés Silva', 
+          medicamentos: [
+            { nombre: 'Losartán 50mg', indicacion: '1 comprimido cada 12 horas' }
+          ] 
+        },
+        { 
+          id: 'rec-2', 
+          folio: 'FOL-0002', 
+          fechaHora: '2026-03-10T11:15:00Z', 
+          medico: 'Dr. Andrés Silva', 
+          medicamentos: [
+            { nombre: 'Amlodipino 5mg', indicacion: '1 comprimido al día' },
+            { nombre: 'Atorvastatina 20mg', indicacion: '1 comprimido en la noche' }
+          ] 
+        }
+      ],
+      examenesDicom: [
+        { id: 'ecg-1', fecha: '2025-10-01', tipo: 'Electrocardiograma Reposo', ecgData: ecgNormalData, resultado: 'Normal' },
+        { id: 'ecg-2', fecha: '2026-03-10', tipo: 'Electrocardiograma Reposo', ecgData: ecgAbnormalData, resultado: 'Anormal' }
+      ]
+    };
+  }
+
+  private loadFromStorage() {
+    // __SERVER_START_TIME__ es inyectado por Vite
+    const serverTimeStr = typeof __SERVER_START_TIME__ !== 'undefined' ? __SERVER_START_TIME__.toString() : '0';
+    const storedTime = localStorage.getItem('serverStartTime');
+
+    if (storedTime !== serverTimeStr) {
+      // El servidor se reinició: limpiar datos
+      localStorage.removeItem('patientsDb');
+      localStorage.removeItem('citasDb');
+      localStorage.removeItem('currentPatientId');
+      localStorage.setItem('serverStartTime', serverTimeStr);
+      this.records = [this.getInitialPatient()];
+      
+      // Crear citas de prueba iniciales para el día actual
+      const today = new Date().toISOString().split('T')[0];
+      this.citas = [
+        { id: 'c1', patientId: '1', fecha: today, hora: '09:00', estado: 'completada' },
+        { id: 'c2', patientId: '1', fecha: today, hora: '10:30', estado: 'en_curso' },
+        { id: 'c3', patientId: '1', fecha: today, hora: '11:45', estado: 'pendiente' },
+        { id: 'c4', patientId: '1', fecha: today, hora: '15:00', estado: 'pendiente' }
+      ];
+
+      this.saveToStorage();
+    } else {
+      // El servidor sigue siendo el mismo, cargar datos persistentes
+      const storedData = localStorage.getItem('patientsDb');
+      const storedCitas = localStorage.getItem('citasDb');
+      
+      if (storedData) {
+        this.records = JSON.parse(storedData);
+      } else {
+        this.records = [this.getInitialPatient()];
+      }
+      
+      if (storedCitas) {
+        this.citas = JSON.parse(storedCitas);
+      } else {
+        const today = new Date().toISOString().split('T')[0];
+        this.citas = [
+          { id: 'c1', patientId: '1', fecha: today, hora: '09:00', estado: 'completada' },
+          { id: 'c2', patientId: '1', fecha: today, hora: '10:30', estado: 'en_curso' }
+        ];
+      }
+      this.saveToStorage();
+    }
+  }
+
+  private saveToStorage() {
+    localStorage.setItem('patientsDb', JSON.stringify(this.records));
+    localStorage.setItem('citasDb', JSON.stringify(this.citas));
+  }
+
+  getAll(): PatientRecord[] {
+    return [...this.records];
+  }
+
+  getById(id: string): PatientRecord | undefined {
+    return this.records.find(r => r.id === id);
+  }
+
+  save(record: Omit<PatientRecord, 'id' | 'fechaRegistro' | 'mediciones' | 'recetas' | 'examenesDicom'>): PatientRecord {
+    const newRecord: PatientRecord = {
+      ...record,
+      id: Math.random().toString(36).substring(2, 9),
+      fechaRegistro: new Date().toISOString(),
+      mediciones: [],
+      recetas: [],
+      examenesDicom: []
+    };
+    this.records.push(newRecord);
+    this.saveToStorage();
+    return newRecord;
+  }
+  
+  addMedicion(patientId: string, medicion: Omit<Medicion, 'id'>) {
+    const patient = this.getById(patientId);
+    if (patient) {
+      patient.mediciones.push({
+        ...medicion,
+        id: Math.random().toString(36).substring(2, 9)
+      });
+      this.saveToStorage();
+    }
+  }
+
+  addReceta(patientId: string, receta: Omit<Receta, 'id'>) {
+    const patient = this.getById(patientId);
+    if (patient) {
+      patient.recetas.push({
+        ...receta,
+        id: Math.random().toString(36).substring(2, 9)
+      });
+      this.saveToStorage();
+    }
+  }
+
+  addExamenDicom(patientId: string, examen: Omit<ExamenDicom, 'id'>) {
+    const patient = this.getById(patientId);
+    if (patient) {
+      if (!patient.examenesDicom) patient.examenesDicom = [];
+      patient.examenesDicom.push({
+        ...examen,
+        id: Math.random().toString(36).substring(2, 9)
+      });
+      this.saveToStorage();
+    }
+  }
+
+  clear() {
+    this.records = [];
+    this.saveToStorage();
+  }
+
+  // AGENDA METHODS
+  getAllCitas(): CitaMedica[] {
+    return [...this.citas];
+  }
+
+  getCitasByDate(fecha: string): CitaMedica[] {
+    return this.citas.filter(c => c.fecha === fecha).sort((a, b) => a.hora.localeCompare(b.hora));
+  }
+
+  addCita(patientId: string, fecha: string, hora: string): CitaMedica {
+    const newCita: CitaMedica = {
+      id: Math.random().toString(36).substring(2, 9),
+      patientId,
+      fecha,
+      hora,
+      estado: 'pendiente'
+    };
+    this.citas.push(newCita);
+    this.saveToStorage();
+    return newCita;
+  }
+
+  updateCitaStatus(citaId: string, estado: 'pendiente' | 'completada' | 'en_curso' | 'ausente'): void {
+    const cita = this.citas.find(c => c.id === citaId);
+    if (cita) {
+      cita.estado = estado;
+      this.saveToStorage();
+    }
+  }
+}
+
+// Singleton instance
+export const db = new MockDatabase();
