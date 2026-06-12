@@ -16,7 +16,7 @@ import { FichaPDF } from '@/components/pdf/FichaPDF';
 import { toPng } from 'html-to-image';
 import { ecgNormalData, ecgAbnormalData } from '@/db/ecgSamples';
 import { db } from '@/db/mockDb';
-import { Activity, AlertTriangle, Heart, Pill, Download, FileText, ShieldCheck, CheckCircle2, TrendingUp, Loader2 } from 'lucide-react';
+import { Activity, AlertTriangle, Heart, Pill, Download, FileText, ShieldCheck, CheckCircle2, TrendingUp, Loader2, Home } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ComposedChart, Bar } from 'recharts';
 import { configRiesgo } from '@/lib/clinical';
 import type { Medicion, PatientRecord } from '@/db/mockDb';
@@ -223,12 +223,12 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
             ) : (
               <>
                 <Card className="shadow-sm">
-            <CardHeader className="pb-2">
+            <CardHeader className="p-6 pb-5">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Heart className="h-4 w-4 text-red-500" /> Historial de Presión Arterial
               </CardTitle>
               <CardDescription className="text-xs">
-                La barra representa la P.A. (Sistólica/Diastólica). La línea gris es la P.A. Media. La línea morada es el Peso Corporal.
+                La barra representa la P.A. (Sistólica/Diastólica). La línea gris es la P.A. Media.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -244,13 +244,10 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                     <XAxis dataKey="timestamp" type="number" scale="time" domain={['dataMin', 'dataMax']} tickFormatter={formatDate} className="text-[10px]" tickMargin={10} label={{ value: 'Fecha de Control', position: 'insideBottom', offset: -15, className: 'text-[10px] fill-muted-foreground' }} />
                     <YAxis yAxisId="left" domain={['auto', 'auto']} className="text-[10px]" label={{ value: 'P. Arterial (mmHg)', angle: -90, position: 'insideLeft', offset: 10, style: {textAnchor: 'middle'} }} />
-                    <YAxis yAxisId="right" orientation="right" domain={['auto', 'auto']} className="text-[10px]" label={{ value: 'Peso (kg)', angle: 90, position: 'insideRight', offset: 10, style: {textAnchor: 'middle'} }} />
                     <ChartTooltip content={<ChartTooltipContent labelFormatter={formatDate} />} />
                     <Bar yAxisId="left" dataKey="rango" shape={<CustomBPBar />} name="Rango PA" isAnimationActive={false} />
                     <Line yAxisId="left" type="monotone" dataKey="media" stroke="#9ca3af" strokeWidth={1.5} dot={{ fill: '#9ca3af', strokeWidth: 0, r: 3 }} name="PA Media" connectNulls={false} isAnimationActive={false} />
-                    <Line yAxisId="right" type="monotone" dataKey="peso" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4, fill: '#8b5cf6' }} name="Peso (kg)" connectNulls={false} isAnimationActive={false} />
                     <Line yAxisId="left" type="monotone" dataKey="media_gap" stroke="#9ca3af" strokeWidth={1.5} strokeDasharray="5 5" dot={false} activeDot={false} name="Inasistencia >40d" connectNulls={false} isAnimationActive={false} />
-                    <Line yAxisId="right" type="monotone" dataKey="peso_gap" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={false} name="Inasistencia >40d" connectNulls={false} isAnimationActive={false} />
                   </ComposedChart>
                 </ChartContainer>
               </div>
@@ -259,7 +256,7 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
 
           {cholData.length > 0 && (
             <Card className="shadow-sm">
-              <CardHeader className="pb-2">
+              <CardHeader className="p-6 pb-5">
                 <CardTitle className="text-sm flex items-center gap-2 text-amber-600">
                   <Activity className="h-4 w-4" /> Evolución Colesterol no-HDL
                 </CardTitle>
@@ -283,7 +280,7 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
 
           {imcData.length > 0 && (
             <Card className="shadow-sm">
-              <CardHeader className="pb-2">
+              <CardHeader className="p-6 pb-5">
                 <CardTitle className="text-sm flex items-center gap-2 text-purple-600">
                   <Activity className="h-4 w-4" /> Evolución Índice de Masa Corporal (IMC)
                 </CardTitle>
@@ -311,7 +308,7 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
 
         <TabsContent value="score2" className="mt-4 space-y-6 fade-in">
           <Card className="shadow-sm">
-            <CardHeader className="pb-2">
+            <CardHeader className="p-6 pb-5">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Heart className="h-5 w-5 text-red-500" /> Detalle de Riesgo SCORE2
               </CardTitle>
@@ -376,16 +373,17 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
         </TabsContent>
 
         <TabsContent value="historial" className="mt-4 space-y-6 fade-in">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Activity className="h-5 w-5 text-blue-500" /> Registro Tabular de Mediciones
+          {/* Controles Clínicos */}
+          <Card className="shadow-sm border-border">
+            <CardHeader className="p-6 pb-5 bg-blue-50 border-b border-blue-100">
+              <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
+                <Activity className="h-5 w-5" /> Controles Clínicos
               </CardTitle>
-              <CardDescription>
-                Historial detallado en bruto de todas las tomas de signos vitales registradas.
+              <CardDescription className="text-blue-800/70">
+                Historial de mediciones realizadas por personal médico en el centro de salud.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -397,23 +395,68 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
                     <TableHead>F. Cardíaca</TableHead>
                     <TableHead>Colesterol</TableHead>
                     <TableHead>HbA1c</TableHead>
+                    <TableHead>Profesional</TableHead>
                     <TableHead>Comentario Clínico</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {[...mediciones].reverse().map(m => (
+                  {[...mediciones].reverse().filter(m => m.profesionalRegistro !== 'Auto-reporte (Portal)').map(m => (
                     <TableRow key={m.id}>
                       <TableCell className="font-medium">{m.fecha}</TableCell>
                       <TableCell>{m.peso} kg</TableCell>
                       <TableCell>{m.talla} m</TableCell>
                       <TableCell>{(m.peso / (m.talla * m.talla)).toFixed(1)}</TableCell>
-                      <TableCell>{m.presionSistolica}/{m.presionDiastolica}</TableCell>
+                      <TableCell className="font-bold">{m.presionSistolica}/{m.presionDiastolica}</TableCell>
                       <TableCell>{m.frecuenciaCardiaca ? `${m.frecuenciaCardiaca} lpm` : '-'}</TableCell>
                       <TableCell>{m.colesterol ? `${m.colesterol} mg/dL` : '-'}</TableCell>
                       <TableCell>{m.hba1c ? `${m.hba1c}%` : '-'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{m.profesionalRegistro || 'Clínica'}</TableCell>
                       <TableCell className="text-xs max-w-[200px] truncate" title={m.comentarioMedico}>{m.comentarioMedico || '-'}</TableCell>
                     </TableRow>
                   ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Registros en Casa (Telemonitoreo) */}
+          <Card className="shadow-sm border-border">
+            <CardHeader className="p-6 pb-5 bg-slate-50 border-b border-border">
+              <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
+                <Home className="h-5 w-5" /> Registros en Casa (Telemonitoreo)
+              </CardTitle>
+              <CardDescription>
+                Auto-reportes de presión arterial ingresados por el paciente desde su portal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>P.A. (Sis/Dia)</TableHead>
+                    <TableHead>Origen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...mediciones].reverse().filter(m => m.profesionalRegistro === 'Auto-reporte (Portal)').map(m => (
+                    <TableRow key={m.id}>
+                      <TableCell className="font-medium">{m.fecha}</TableCell>
+                      <TableCell className="font-bold text-blue-700">{m.presionSistolica}/{m.presionDiastolica}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 w-max">
+                          <Home className="w-3 h-3" /> App Paciente
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {[...mediciones].filter(m => m.profesionalRegistro === 'Auto-reporte (Portal)').length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                        No hay registros domiciliarios reportados por el paciente.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -422,7 +465,7 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
 
         <TabsContent value="examenes" className="mt-4 space-y-6 fade-in">
           <Card className="shadow-sm">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardHeader className="p-6 pb-5 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-indigo-500" /> Exámenes Complementarios
@@ -550,7 +593,7 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
 
         <TabsContent value="recetas" className="mt-4 space-y-6 fade-in">
           <Card className="shadow-sm">
-            <CardHeader className="pb-2">
+            <CardHeader className="p-6 pb-5">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-500" /> Historial de Recetas Emitidas
               </CardTitle>

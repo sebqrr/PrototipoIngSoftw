@@ -21,7 +21,9 @@ const styles = StyleSheet.create({
   colParams: { width: '35%', fontSize: 8, color: '#475569' },
   colNotas: { width: '50%', fontSize: 9 },
   chartsImage: { width: '100%', marginTop: 10 },
-  footer: { position: 'absolute', bottom: 30, left: 40, right: 40, textAlign: 'center', color: '#94a3b8', fontSize: 8, borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 10 }
+  chartsImage: { width: '100%', marginTop: 10 },
+  footer: { position: 'absolute', bottom: 30, left: 40, right: 40, textAlign: 'center', color: '#94a3b8', fontSize: 8, borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 10 },
+  watermark: { position: 'absolute', top: 350, left: 50, transform: 'rotate(-45deg)', fontSize: 40, color: '#e2e8f0', opacity: 0.5, fontWeight: 'bold' }
 });
 
 interface FichaPDFProps {
@@ -37,10 +39,11 @@ export function FichaPDF({ patient, mediciones, riesgo, chartsImage }: FichaPDFP
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <Text style={styles.watermark} fixed>DOCUMENTO OFICIAL - PREVENCION CARDIO</Text>
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Ficha Clínica Electrónica</Text>
-            <Text style={styles.headerSubtitle}>Generado el {new Date().toLocaleDateString()} a las {new Date().toLocaleTimeString()}</Text>
+            <Text style={styles.headerSubtitle}>Generado el {new Date().toLocaleDateString()} a las {new Date().toLocaleTimeString()} (CLT)</Text>
           </View>
           <View style={styles.logoContainer}>
             <Text style={{ fontWeight: 'bold', color: '#2563eb' }}>MediConnect Pro</Text>
@@ -97,6 +100,46 @@ export function FichaPDF({ patient, mediciones, riesgo, chartsImage }: FichaPDFP
           ))}
           {mediciones.length === 0 && (
              <View style={styles.tableRow}><View style={styles.tableCell}><Text>No hay controles en este período.</Text></View></View>
+          )}
+        </View>
+
+        <Text style={styles.sectionTitle}>Recetas Médicas Emitidas</Text>
+        <View style={styles.table}>
+          <View style={[styles.tableRow, styles.tableHeader]}>
+            <View style={[styles.tableCell, {width: '20%'}]}><Text>Fecha</Text></View>
+            <View style={[styles.tableCell, {width: '80%'}]}><Text>Medicamentos e Indicaciones</Text></View>
+          </View>
+          {patient.recetas?.map((r, i) => (
+            <View key={`r-${i}`} style={styles.tableRow}>
+              <View style={[styles.tableCell, {width: '20%'}]}><Text>{new Date(r.fechaEmision).toLocaleDateString()}</Text></View>
+              <View style={[styles.tableCell, {width: '80%', fontSize: 8}]}>
+                {r.medicamentos.map((m, j) => (
+                  <Text key={`m-${j}`}>{m.nombre} - {m.dosis} - {m.frecuencia} - {m.duracion}. Ind: {m.indicacion}</Text>
+                ))}
+              </View>
+            </View>
+          ))}
+          {(!patient.recetas || patient.recetas.length === 0) && (
+            <View style={styles.tableRow}><View style={styles.tableCell}><Text>No existen recetas emitidas.</Text></View></View>
+          )}
+        </View>
+
+        <Text style={styles.sectionTitle}>Exámenes (ECG / Imágenes)</Text>
+        <View style={styles.table}>
+          <View style={[styles.tableRow, styles.tableHeader]}>
+            <View style={[styles.tableCell, {width: '20%'}]}><Text>Fecha</Text></View>
+            <View style={[styles.tableCell, {width: '40%'}]}><Text>Tipo de Estudio</Text></View>
+            <View style={[styles.tableCell, {width: '40%'}]}><Text>Resultado / Informe</Text></View>
+          </View>
+          {patient.examenesDicom?.map((e, i) => (
+            <View key={`e-${i}`} style={styles.tableRow}>
+              <View style={[styles.tableCell, {width: '20%'}]}><Text>{new Date(e.fecha).toLocaleDateString()}</Text></View>
+              <View style={[styles.tableCell, {width: '40%'}]}><Text>{e.tipo}</Text></View>
+              <View style={[styles.tableCell, {width: '40%'}]}><Text>{e.resultado}</Text></View>
+            </View>
+          ))}
+          {(!patient.examenesDicom || patient.examenesDicom.length === 0) && (
+            <View style={styles.tableRow}><View style={styles.tableCell}><Text>No existen exámenes adjuntos.</Text></View></View>
           )}
         </View>
 

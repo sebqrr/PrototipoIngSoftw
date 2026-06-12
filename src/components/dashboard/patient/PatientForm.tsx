@@ -115,7 +115,7 @@ export function PatientForm({ onRecordSaved }: PatientFormProps) {
     <div className="space-y-4">
       {isNew && (
         <Card className="shadow-sm border-border">
-          <CardHeader className="pb-3 border-b bg-muted/20">
+          <CardHeader className="p-6 pb-5 border-b bg-muted/20">
             <CardTitle className="text-lg flex items-center gap-2">
               <User className="h-5 w-5 text-blue-600" /> Datos Demográficos
             </CardTitle>
@@ -160,7 +160,7 @@ export function PatientForm({ onRecordSaved }: PatientFormProps) {
       )}
 
       <Card className="shadow-sm border-border">
-        <CardHeader className="pb-3 border-b bg-muted/20">
+        <CardHeader className="p-6 pb-5 border-b bg-muted/20">
           <CardTitle className="text-lg flex items-center gap-2">
             <Activity className="h-5 w-5 text-green-600" /> Registrar Medición
           </CardTitle>

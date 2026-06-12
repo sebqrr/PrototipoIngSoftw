@@ -1,4 +1,5 @@
 import { usePatient } from '@/context/PatientContext';
+import { useAuth } from '@/context/Auth';
 import { db } from '@/db/mockDb';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -12,11 +13,15 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 
 export default function DashboardMedico() {
   const { currentPatientId } = usePatient();
+  const { logout } = useAuth();
   const location = useLocation();
 
   const currentName = currentPatientId
@@ -39,26 +44,51 @@ export default function DashboardMedico() {
 
         <SidebarInset>
           {/* Header */}
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mx-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/">
-                    {getPageTitle()}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                {currentName && location.pathname.includes('pacientes') && (
-                  <>
-                    <BreadcrumbSeparator className="hidden md:block" />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>{currentName}</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </>
-                )}
-              </BreadcrumbList>
-            </Breadcrumb>
+          <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mx-2 h-4" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:block">
+                    <BreadcrumbLink href="/">
+                      {getPageTitle()}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  {currentName && location.pathname.includes('pacientes') && (
+                    <>
+                      <BreadcrumbSeparator className="hidden md:block" />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage>{currentName}</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </>
+                  )}
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+
+            {/* Simulated Medical Profile & Logout */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col text-right hidden sm:flex">
+                  <span className="text-sm font-bold leading-none">Dr. Andrés Silva</span>
+                  <span className="text-[10px] font-medium text-muted-foreground mt-0.5">Jefe de Cardiología</span>
+                </div>
+                <Avatar className="h-8 w-8 border border-border">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">AS</AvatarFallback>
+                </Avatar>
+              </div>
+              <Separator orientation="vertical" className="h-6" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={logout} 
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10" 
+                title="Cerrar Sesión"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </header>
 
           {/* Content */}

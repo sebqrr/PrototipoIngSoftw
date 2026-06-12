@@ -8,8 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CalendarClock, Activity, AlertTriangle, UserPlus, HeartPulse, Stethoscope, Search, PlusCircle, ArrowRight, User, FileDown, BookOpen, Phone, ChevronRight, FileText, ExternalLink, CalendarIcon, CheckCircle2, Clock, ShieldCheck, Users, Mail, Send } from 'lucide-react';
+import { CalendarClock, AlertTriangle, UserPlus, HeartPulse, Stethoscope, Search, ArrowRight, User, FileDown, BookOpen, FileText, ExternalLink, CalendarIcon, CheckCircle2, Clock, ShieldCheck, Mail, Send } from 'lucide-react';
 import { calcularRiesgoSCORE2, configRiesgo, calcularEdad } from '@/lib/clinical';
+
+import { Calendar } from '@/components/ui/calendar';
+import { useNavigate } from 'react-router-dom';
 
 interface HomeDashboardProps {
   pacientesDb: PatientRecord[];
@@ -17,11 +20,13 @@ interface HomeDashboardProps {
 
 export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
   const { setCurrentPatientId } = usePatient();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [atrasoMeses, setAtrasoMeses] = useState(3);
   const [contactoOpen, setContactoOpen] = useState(false);
-  const [contactoPatient, setContactoPatient] = useState<any>(null);
+  const [contactoPatient, setContactoPatient] = useState<(PatientRecord & { mesesAtraso: number }) | null>(null);
   const [mensajeContacto, setMensajeContacto] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const pacientesAtrasados = useMemo(() => {
     return pacientesDb.filter(p => {
@@ -43,7 +48,7 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
     }).sort((a, b) => b.mesesAtraso - a.mesesAtraso);
   }, [pacientesDb, atrasoMeses]);
 
-  const abrirModalContacto = (paciente: any) => {
+  const abrirModalContacto = (paciente: PatientRecord & { mesesAtraso: number }) => {
     setContactoPatient(paciente);
     setMensajeContacto(`Estimado/a ${paciente.nombre}, le escribimos desde el Centro Médico Cardíaco. Notamos que hace ${paciente.mesesAtraso} meses no acude a su control cardiovascular de rutina. Debido a sus factores clínicos, es sumamente importante agendar una consulta a la brevedad para ajustar su tratamiento. Responda este mensaje para agendar su hora.`);
     setContactoOpen(true);
@@ -58,26 +63,25 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
     const mediciones = p.mediciones || [];
     const lastM = mediciones[mediciones.length - 1];
     return lastM && (lastM.presionSistolica >= 140 || lastM.presionDiastolica >= 90);
-  });
-  const pacientesPrioritarios = pacientesDb.filter(p => {
-    const mediciones = p.mediciones || [];
-    const lastM = mediciones[mediciones.length - 1];
-    return lastM && (lastM.presionSistolica >= 135 || (lastM.colesterolNoHDL && lastM.colesterolNoHDL > 130));
   }).slice(0, 5);
+
   const displayList = searchTerm
     ? pacientesDb.filter(p => p.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
     : pacientesDb.slice(-5).reverse();
 
-  // Agenda for today
+  // Agenda for the selected day
   const citasDelDia = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const citasHoy = db.getCitasByDate(today);
+    // Evitar desfase de zona horaria usando offset local
+    const offset = selectedDate.getTimezoneOffset()
+    const targetDate = new Date(selectedDate.getTime() - (offset*60*1000))
+    const dateStr = targetDate.toISOString().split('T')[0];
+    const citasHoy = db.getCitasByDate(dateStr);
     
     return citasHoy.map(c => {
       const paciente = pacientesDb.find(p => p.id === c.patientId);
       return { ...c, paciente };
     }).filter(c => c.paciente);
-  }, [pacientesDb]);
+  }, [pacientesDb, selectedDate]);
 
   return (
     <div className="space-y-8">
@@ -90,26 +94,27 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
       {/* ─── KPI Strip ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Pacientes',  value: pacientesDb.length, icon: User, bgClass: 'bg-dashboard-blue', fgClass: 'text-dashboard-blue-fg' },
-          { label: 'Alertas Críticas', value: pacientesConAlerta.length, icon: AlertTriangle, bgClass: 'bg-dashboard-red', fgClass: 'text-dashboard-red-fg' },
+          { label: 'Total Pacientes',  value: pacientesDb.length, description: 'Pacientes registrados en el sistema', icon: User, bgClass: 'bg-dashboard-blue', fgClass: 'text-dashboard-blue-fg' },
+          { label: 'Alertas Críticas', value: pacientesConAlerta.length, description: 'Pacientes descompensados hoy (PA ≥ 140/90)', icon: AlertTriangle, bgClass: 'bg-dashboard-red', fgClass: 'text-dashboard-red-fg' },
           { label: 'Riesgo Elevado',   value: pacientesDb.filter(p => { 
             const mediciones = p.mediciones || [];
             const lastM = mediciones[mediciones.length - 1];
             if (!lastM) return false;
             const r = calcularRiesgoSCORE2(calcularEdad(p.fechaNacimiento || '1970-01-01'), lastM.presionSistolica); 
             return r === 'ALTO' || r === 'MUY_ALTO'; 
-          }).length, icon: HeartPulse, bgClass: 'bg-dashboard-red', fgClass: 'text-dashboard-red-fg' },
-          { label: 'Controles Hoy',    value: citasDelDia.length, icon: CalendarClock, bgClass: 'bg-dashboard-green', fgClass: 'text-dashboard-green-fg' },
+          }).length, description: 'Riesgo SCORE2 Alto/Muy Alto a 10 años', icon: HeartPulse, bgClass: 'bg-dashboard-red', fgClass: 'text-dashboard-red-fg' },
+          { label: 'Controles Hoy',    value: citasDelDia.length, description: 'Citas médicas agendadas para hoy', icon: CalendarClock, bgClass: 'bg-dashboard-green', fgClass: 'text-dashboard-green-fg' },
         ].map((kpi) => (
           <Card key={kpi.label} className="shadow-sm border border-border overflow-hidden pt-0 [--card-spacing:0]">
-            <CardHeader className={`p-5 ${kpi.bgClass} shadow-sm relative z-10`}>
+            <CardHeader className={`p-4 pb-3 ${kpi.bgClass} shadow-sm relative z-10`}>
               <CardTitle className={`flex items-center gap-2 ${kpi.fgClass}`}>
                 <kpi.icon className="h-4 w-4" />
                 {kpi.label}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-5">
-              <p className="text-2xl font-bold">{kpi.value}</p>
+            <CardContent className="p-4 pt-3 flex flex-col justify-center">
+              <p className="text-3xl font-bold mb-1">{kpi.value}</p>
+              <p className="text-xs text-muted-foreground leading-tight">{kpi.description}</p>
             </CardContent>
           </Card>
         ))}
@@ -118,20 +123,28 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
       {/* ─── Row 1: Agenda & Fichas ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-        {/* ══════ Agenda del Día (2 cols) ══════ */}
-        <Card className="lg:col-span-2 flex flex-col shadow-sm border border-border overflow-hidden pt-0 [--card-spacing:0]">
+        {/* ══════ Agenda (3 cols) ══════ */}
+        <Card className="lg:col-span-3 flex flex-col shadow-sm border border-border overflow-hidden pt-0 [--card-spacing:0]">
           <CardHeader className="p-5 bg-dashboard-green shadow-sm relative z-10">
             <CardTitle className="flex items-center gap-2 text-dashboard-green-fg">
               <CalendarIcon className="h-5 w-5" />
-              Agenda Médica del Día
+              Agenda Médica
             </CardTitle>
             <CardDescription className="text-dashboard-green-fg/85 text-xs">
-              Tus citas programadas para hoy
+              Selecciona un día para ver tus citas programadas
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="p-0 flex-1">
-            <div className="divide-y divide-border h-[280px] overflow-y-auto">
+          <CardContent className="p-0 flex-1 flex flex-col sm:flex-row">
+            <div className="p-4 border-b sm:border-b-0 sm:border-r border-border shrink-0 flex justify-center bg-muted/5">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(day) => day && setSelectedDate(day)}
+                className="rounded-md"
+              />
+            </div>
+            <div className="divide-y divide-border h-[320px] overflow-y-auto flex-1 bg-card">
               { citasDelDia.length > 0 ? (
                 citasDelDia.map((cita) => (
                   <div key={cita.hora} className={`flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors cursor-pointer ${
@@ -185,15 +198,15 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
               )}
             </div>
           </CardContent>
-          <CardFooter className="border-t p-5 !pt-5 flex items-center justify-center bg-muted/20">
-            <Button variant="outline" size="sm" className="w-full text-xs font-medium gap-2 border-dashboard-green/30 text-dashboard-green hover:bg-dashboard-green/10 hover:text-dashboard-green">
+          <CardFooter className="border-t p-5 !pt-5 flex items-center justify-center bg-muted/10">
+            <Button variant="outline" size="sm" onClick={() => navigate('/agenda')} className="w-full text-xs font-medium gap-2 border-dashboard-green/30 text-dashboard-green hover:bg-dashboard-green/10 hover:text-dashboard-green">
               <CalendarClock className="h-3.5 w-3.5" /> Ver Agenda Completa
             </Button>
           </CardFooter>
         </Card>
 
-        {/* ══════ Fichas Clínicas (3 cols) ══════ */}
-        <Card className="lg:col-span-3 flex flex-col shadow-sm border border-border overflow-hidden pt-0 [--card-spacing:0]">
+        {/* ══════ Fichas Clínicas (2 cols) ══════ */}
+        <Card className="lg:col-span-2 flex flex-col shadow-sm border border-border overflow-hidden pt-0 [--card-spacing:0]">
           <CardHeader className="p-5 bg-dashboard-blue shadow-sm relative z-10">
             <CardTitle className="flex items-center gap-2 text-dashboard-blue-fg">
               <Stethoscope className="h-5 w-5" />
@@ -222,7 +235,7 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
               
               <div className="overflow-y-auto pr-2 pb-2 -mr-2 max-h-[380px]">
                 {displayList.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     {displayList.map(p => {
                       const edad = calcularEdad(p.fechaNacimiento || '1970-01-01');
                       const mediciones = p.mediciones || [];
@@ -241,7 +254,10 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
                         <Card
                           key={p.id}
                           className={`cursor-pointer hover:shadow-md transition-all group shadow-sm flex flex-col border ${borderColor}`}
-                          onClick={() => setCurrentPatientId(p.id)}
+                          onClick={() => {
+                            setCurrentPatientId(p.id);
+                            navigate('/pacientes');
+                          }}
                         >
                           <CardContent className="px-3 py-1.5 flex flex-col gap-2 flex-1">
                             {/* Header: Avatar, Name, Demographics */}
@@ -290,7 +306,10 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
           </CardContent>
 
           <CardFooter className="border-t p-5 !pt-5 flex items-center justify-center">
-            <Button variant="outline" size="sm" onClick={() => setCurrentPatientId('NUEVO')} className="w-full text-xs font-medium gap-2 border-dashboard-blue/30 text-dashboard-blue hover:bg-dashboard-blue/10 hover:text-dashboard-blue">
+            <Button variant="outline" size="sm" onClick={() => {
+              setCurrentPatientId('NUEVO');
+              navigate('/pacientes');
+            }} className="w-full text-xs font-medium gap-2 border-dashboard-blue/30 text-dashboard-blue hover:bg-dashboard-blue/10 hover:text-dashboard-blue">
               <UserPlus className="h-3.5 w-3.5" /> Nuevo Ingreso
             </Button>
           </CardFooter>
@@ -341,7 +360,7 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
                 </TableHeader>
                 <TableBody>
                   {pacientesAtrasados.length > 0 ? (
-                    pacientesAtrasados.map((p, i) => (
+                    pacientesAtrasados.map(p => (
                       <TableRow key={p.id} className="text-xs">
                         <TableCell className="py-2 pl-4">
                           <div className="flex items-center gap-2">
@@ -434,7 +453,7 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
             </div>
           </CardContent>
           <CardFooter className="border-t p-5 !pt-5 flex items-center justify-center">
-            <Button variant="outline" size="sm" className="w-full text-xs font-medium gap-2 border-dashboard-violet/30 text-dashboard-violet hover:bg-dashboard-violet/10 hover:text-dashboard-violet">
+            <Button variant="outline" size="sm" onClick={() => navigate('/reportes')} className="w-full text-xs font-medium gap-2 border-dashboard-violet/30 text-dashboard-violet hover:bg-dashboard-violet/10 hover:text-dashboard-violet">
               <FileDown className="h-3.5 w-3.5" /> Descargar CSV Anonimizado
             </Button>
           </CardFooter>
@@ -449,7 +468,7 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
             Soporte a la Decisión Clínica
           </CardTitle>
           <CardDescription className="text-dashboard-pink-fg/85 text-xs">
-            Protocolos y guías médicas vigentes (HU-09)
+            Protocolos y guías médicas vigentes
           </CardDescription>
         </CardHeader>
         <CardContent className="p-5">
@@ -459,7 +478,7 @@ export function HomeDashboard({ pacientesDb }: HomeDashboardProps) {
               { title: 'Protocolo SCORE2',   desc: 'Estratificación de Riesgo Cardiovascular', icon: HeartPulse,  bgClass: 'bg-dashboard-orange/10', fgClass: 'text-dashboard-orange' },
               { title: 'Guía Farmacológica', desc: 'Estatinas y terapia antihipertensiva',     icon: Stethoscope, bgClass: 'bg-dashboard-green/10', fgClass: 'text-dashboard-green' },
             ].map(g => (
-              <Card key={g.title} className="cursor-pointer hover:shadow-md transition-all group shadow-sm border-border">
+              <Card key={g.title} onClick={() => navigate('/guias')} className="cursor-pointer hover:shadow-md transition-all group shadow-sm border-border">
                 <CardContent className="p-4 flex items-start gap-4">
                   <div className={`rounded-lg p-2 ${g.bgClass} ${g.fgClass} shrink-0`}>
                     <g.icon className="h-4 w-4" />

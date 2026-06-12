@@ -24,8 +24,8 @@ export function PatientConsultation({ onRecordSaved }: PatientConsultationProps)
   // Estado para la receta
   const [medicamentosReceta, setMedicamentosReceta] = useState([{ nombre: '', indicacion: '' }]);
   const [recetaOpen, setRecetaOpen] = useState(false);
-  const [folioActual, setFolioActual] = useState(Math.random().toString(36).substring(2, 10).toUpperCase());
-  const [fechaHoraReceta, setFechaHoraReceta] = useState(new Date().toISOString());
+  const [folioActual, setFolioActual] = useState(() => Math.random().toString(36).substring(2, 10).toUpperCase());
+  const [fechaHoraReceta, setFechaHoraReceta] = useState(() => new Date().toISOString());
 
   const handleAddMed = () => setMedicamentosReceta([...medicamentosReceta, { nombre: '', indicacion: '' }]);
   const handleRemoveMed = (index: number) => setMedicamentosReceta(medicamentosReceta.filter((_, i) => i !== index));
@@ -69,10 +69,10 @@ export function PatientConsultation({ onRecordSaved }: PatientConsultationProps)
           <div className="flex flex-col md:flex-row items-center gap-4">
             {/* Botón de Emitir Receta Médica */}
             <Dialog open={recetaOpen} onOpenChange={setRecetaOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
-                  <Pill className="h-4 w-4" /> Emitir Receta
-                </Button>
+              <DialogTrigger render={
+                <Button variant="outline" className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50" />
+              }>
+                <Pill className="h-4 w-4" /> Emitir Receta
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>

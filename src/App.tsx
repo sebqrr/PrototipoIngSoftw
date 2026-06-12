@@ -7,10 +7,11 @@ import { PatientProvider } from './context/PatientContext';
 
 // Vistas
 import Login from './pages/login';
-import MainLayout from './layouts/MainLayout';
+import PatientLayout from './layouts/PatientLayout';
 import DashboardMedico from './pages/DashboardMedico';
 import PortalPaciente from './pages/PortalDelPaciente';
 import SimuladorFinanciero from './pages/SimuladorFinanciero';
+import EducacionPage from './pages/paciente/EducacionPage';
 
 // Módulos Médico
 import DashboardPage from './pages/medico/DashboardPage';
@@ -51,9 +52,10 @@ function ProtectedRoutes() {
 
       {/* Rutas exclusivas Paciente */}
       {role === 'PACIENTE' && (
-        <Route element={<MainLayout />}>
+        <Route element={<PatientLayout />}>
           <Route path="/paciente" element={<PortalPaciente />} />
           <Route path="/simulador" element={<SimuladorFinanciero />} />
+          <Route path="/educacion/:tema" element={<EducacionPage />} />
         </Route>
       )}
     </Routes>

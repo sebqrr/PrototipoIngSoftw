@@ -64,6 +64,8 @@ export interface PatientRecord {
   mediciones: Medicion[];
   recetas: Receta[];
   examenesDicom: ExamenDICOM[];
+  modulosEducativosCompletados?: string[];
+  logAuditoria?: { accion: string, fecha: string, ip: string }[];
 }
 
 declare const __SERVER_START_TIME__: number;
@@ -115,7 +117,28 @@ class MockDatabase {
       examenesDicom: [
         { id: 'ecg-1', fecha: '2025-10-01', tipo: 'Electrocardiograma Reposo', ecgData: ecgNormalData, resultado: 'Normal' },
         { id: 'ecg-2', fecha: '2026-03-10', tipo: 'Electrocardiograma Reposo', ecgData: ecgAbnormalData, resultado: 'Anormal' }
-      ]
+      ],
+      modulosEducativosCompletados: [],
+      logAuditoria: []
+    };
+  }
+
+  private getSecondPatient(): PatientRecord {
+    return {
+      id: '2',
+      rut: '18.999.888-7',
+      nombre: 'María González',
+      fechaNacimiento: '1995-08-20',
+      sexo: 'F',
+      tabaquismo: false,
+      fechaRegistro: new Date().toISOString(),
+      mediciones: [
+        { id: 'm5', fecha: new Date().toISOString().split('T')[0], peso: 60, talla: 1.65, presionSistolica: 115, presionDiastolica: 75, colesterol: 110, frecuenciaCardiaca: 68, hba1c: 5.2, comentarioMedico: 'Paciente sana, chequeo preventivo general.', profesionalRegistro: 'Dr. Andrés Silva' }
+      ],
+      recetas: [],
+      examenesDicom: [],
+      modulosEducativosCompletados: [],
+      logAuditoria: []
     };
   }
 
@@ -130,7 +153,7 @@ class MockDatabase {
       localStorage.removeItem('citasDb');
       localStorage.removeItem('currentPatientId');
       localStorage.setItem('serverStartTime', serverTimeStr);
-      this.records = [this.getInitialPatient()];
+      this.records = [this.getInitialPatient(), this.getSecondPatient()];
       
       // Crear citas de prueba iniciales para el día actual
       const today = new Date().toISOString().split('T')[0];
@@ -150,7 +173,7 @@ class MockDatabase {
       if (storedData) {
         this.records = JSON.parse(storedData);
       } else {
-        this.records = [this.getInitialPatient()];
+        this.records = [this.getInitialPatient(), this.getSecondPatient()];
       }
       
       if (storedCitas) {
@@ -186,7 +209,8 @@ class MockDatabase {
       fechaRegistro: new Date().toISOString(),
       mediciones: [],
       recetas: [],
-      examenesDicom: []
+      examenesDicom: [],
+      logAuditoria: []
     };
     this.records.push(newRecord);
     this.saveToStorage();
@@ -215,7 +239,7 @@ class MockDatabase {
     }
   }
 
-  addExamenDicom(patientId: string, examen: Omit<ExamenDicom, 'id'>) {
+  addExamenDicom(patientId: string, examen: Omit<ExamenDICOM, 'id'>) {
     const patient = this.getById(patientId);
     if (patient) {
       if (!patient.examenesDicom) patient.examenesDicom = [];
@@ -230,6 +254,34 @@ class MockDatabase {
   clear() {
     this.records = [];
     this.saveToStorage();
+  }
+
+  completarModulo(patientId: string, moduloId: string) {
+    const patient = this.getById(patientId);
+    if (patient) {
+      if (!patient.modulosEducativosCompletados) {
+        patient.modulosEducativosCompletados = [];
+      }
+      if (!patient.modulosEducativosCompletados.includes(moduloId)) {
+        patient.modulosEducativosCompletados.push(moduloId);
+        this.saveToStorage();
+      }
+    }
+  }
+
+  registrarAuditoriaDescarga(patientId: string) {
+    const patient = this.getById(patientId);
+    if (patient) {
+      if (!patient.logAuditoria) {
+        patient.logAuditoria = [];
+      }
+      patient.logAuditoria.push({
+        accion: "Descarga de Ficha Clínica PDF Inalterable",
+        fecha: new Date().toISOString(),
+        ip: "127.0.0.1"
+      });
+      this.saveToStorage();
+    }
   }
 
   // AGENDA METHODS
@@ -258,6 +310,15 @@ class MockDatabase {
     const cita = this.citas.find(c => c.id === citaId);
     if (cita) {
       cita.estado = estado;
+      this.saveToStorage();
+    }
+  }
+
+  rescheduleCita(citaId: string, nuevaFecha: string, nuevaHora: string): void {
+    const cita = this.citas.find(c => c.id === citaId);
+    if (cita) {
+      cita.fecha = nuevaFecha;
+      cita.hora = nuevaHora;
       this.saveToStorage();
     }
   }

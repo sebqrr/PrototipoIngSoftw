@@ -1,5 +1,4 @@
 import { usePatient } from '@/context/PatientContext';
-import { useAuth } from '@/context/Auth';
 import {
   Sidebar,
   SidebarContent,
@@ -9,16 +8,14 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarHeader,
-  SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import { HeartPulse, LayoutDashboard, UserPlus, CalendarClock, FileBarChart, BookOpen, LogOut } from 'lucide-react';
+import { HeartPulse, LayoutDashboard, UserPlus, CalendarClock, FileBarChart, BookOpen } from 'lucide-react';
 
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export function DashboardSidebar() {
   const { setCurrentPatientId } = usePatient();
-  const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -90,16 +87,6 @@ export function DashboardSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-3">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={logout} tooltip="Cerrar Sesión" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-              <LogOut className="h-4 w-4" />
-              <span>Cerrar Sesión</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }

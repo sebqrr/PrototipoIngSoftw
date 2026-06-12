@@ -103,7 +103,7 @@ export default function ReportesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-dashboard-blue/20 shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b">
-            <CardTitle className="flex items-center gap-2 text-dashboard-blue">
+            <CardTitle className="flex items-center gap-2 text-blue-800">
               <Database className="h-5 w-5" /> Exportación de Dataset
             </CardTitle>
             <CardDescription>
@@ -112,10 +112,10 @@ export default function ReportesPage() {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="flex flex-col gap-3">
-              <div className="flex items-start gap-3 p-3 bg-dashboard-green/10 text-dashboard-green-fg rounded-lg text-sm border border-dashboard-green/20">
-                <ShieldCheck className="h-5 w-5 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 p-3 bg-emerald-50 text-emerald-900 rounded-lg text-sm border border-emerald-200">
+                <ShieldCheck className="h-5 w-5 shrink-0 mt-0.5 text-emerald-600" />
                 <p>
-                  <strong>Cumplimiento Legal (Ley de Protección de Datos):</strong> El algoritmo de exportación aplicará una máscara de anonimización automática. Los campos identificables (Nombre, RUT) serán purgados y reemplazados por un Hash criptográfico corto.
+                  <strong className="text-emerald-950">Cumplimiento Legal (Ley de Protección de Datos):</strong> El algoritmo de exportación aplicará una máscara de anonimización automática. Los campos identificables (Nombre, RUT) serán purgados y reemplazados por un Hash criptográfico corto.
                 </p>
               </div>
               <ul className="text-xs text-muted-foreground list-disc pl-5 mt-2 space-y-1">
@@ -129,7 +129,7 @@ export default function ReportesPage() {
           </CardContent>
           <CardFooter className="border-t bg-slate-50/50 p-4">
             <Button 
-              className="w-full gap-2 bg-dashboard-blue hover:bg-dashboard-blue/90" 
+              className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white" 
               onClick={handleExportCSV}
               disabled={isExporting}
             >

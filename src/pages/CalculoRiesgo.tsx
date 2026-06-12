@@ -1,6 +1,7 @@
 import { ShieldAlert, Info, ArrowRight } from 'lucide-react';
 import { usePatient } from '../context/PatientContext';
 import { Navigate } from 'react-router-dom';
+import { calcularEdad } from '../lib/clinical';
 
 type NivelRiesgo = 'BAJO' | 'MODERADO' | 'ALTO' | 'MUY_ALTO';
 
@@ -14,7 +15,12 @@ export default function CalculoRiesgo() {
 
   // Lógica simplificada de cálculo de riesgo SCORE2
   const calcularNivelRiesgo = (): NivelRiesgo => {
-    const { edad, presionSistolica } = currentPatient;
+    const edad = calcularEdad(currentPatient.fechaNacimiento);
+    const ultimaMedicion = currentPatient.mediciones && currentPatient.mediciones.length > 0 
+      ? currentPatient.mediciones[currentPatient.mediciones.length - 1] 
+      : null;
+    const presionSistolica = ultimaMedicion?.presionSistolica || 120;
+    
     if (edad >= 65 && presionSistolica >= 160) return 'MUY_ALTO';
     if (edad >= 60 || presionSistolica >= 140) return 'ALTO';
     if (edad >= 50 || presionSistolica >= 130) return 'MODERADO';
@@ -30,12 +36,20 @@ export default function CalculoRiesgo() {
     MUY_ALTO: { color: 'bg-red-100 text-red-800 border-red-200', titulo: 'Riesgo Muy Alto (≥ 10%)' },
   };
 
+  const ultimaMedicion = currentPatient.mediciones && currentPatient.mediciones.length > 0 
+    ? currentPatient.mediciones[currentPatient.mediciones.length - 1] 
+    : null;
+  const presionSistolica = ultimaMedicion?.presionSistolica || 120;
+  const tabaquismo = currentPatient.tabaquismo;
+  const colesterolNoHDL = ultimaMedicion?.colesterolNoHDL || null;
+  const edad = calcularEdad(currentPatient.fechaNacimiento);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Motor de Estratificación SCORE2</h2>
         <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full border border-blue-200">
-          Paciente: {currentPatient.nombre} ({currentPatient.edad} años)
+          Paciente: {currentPatient.nombre} ({edad} años)
         </span>
       </div>
 
@@ -61,11 +75,11 @@ export default function CalculoRiesgo() {
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
             <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Variables Ponderadas</h4>
             <ul className="space-y-2 text-gray-700 font-medium">
-              <li className="flex justify-between"><span>Edad:</span> <span>{currentPatient.edad} años</span></li>
+              <li className="flex justify-between"><span>Edad:</span> <span>{edad} años</span></li>
               <li className="flex justify-between"><span>Sexo:</span> <span>{currentPatient.sexo === 'M' ? 'Masculino' : 'Femenino'}</span></li>
-              <li className="flex justify-between"><span>Tabaquismo:</span> <span>{currentPatient.tabaquismo ? 'Fumador' : 'No fumador'}</span></li>
-              <li className="flex justify-between text-orange-600"><span>P. Arterial Sistólica:</span> <span>{currentPatient.presionSistolica} mmHg</span></li>
-              <li className="flex justify-between"><span>Colesterol no-HDL:</span> <span>{currentPatient.colesterolNoHDL || 'No registrado'} mg/dL</span></li>
+              <li className="flex justify-between"><span>Tabaquismo:</span> <span>{tabaquismo ? 'Fumador' : 'No fumador'}</span></li>
+              <li className="flex justify-between text-orange-600"><span>P. Arterial Sistólica:</span> <span>{presionSistolica} mmHg</span></li>
+              <li className="flex justify-between"><span>Colesterol no-HDL:</span> <span>{colesterolNoHDL || 'No registrado'} mg/dL</span></li>
             </ul>
           </div>
 

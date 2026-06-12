@@ -90,7 +90,7 @@ export default function PacientesPage() {
 
           return (
             <Card key={p.id} className={`cursor-pointer hover:shadow-md transition-all flex flex-col border-l-4 ${borderColor}`} onClick={() => setCurrentPatientId(p.id)}>
-              <CardHeader className="pb-2">
+              <CardHeader className="p-6 pb-5">
                 <CardTitle className="text-lg leading-tight truncate">{p.nombre}</CardTitle>
                 <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-1">
                   <span className="font-medium text-foreground">{p.rut}</span>
@@ -100,7 +100,7 @@ export default function PacientesPage() {
                   <span>{p.sexo === 'M' ? 'Hombre' : 'Mujer'}</span>
                 </div>
               </CardHeader>
-              <CardContent className="mt-auto">
+              <CardContent className="mt-auto p-6 pt-2 pb-6">
                 <div className="flex justify-between items-center bg-slate-50 p-3 rounded-md border border-slate-100">
                   <div className="flex flex-col">
                     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Última P.A.</span>
