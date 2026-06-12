@@ -12,10 +12,23 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<Role>(null);
+  const [role, setRole] = useState<Role>(() => {
+    // Inicializar desde localStorage para soportar multi-pestañas
+    const saved = localStorage.getItem('userRole');
+    return (saved === 'MEDICO' || saved === 'PACIENTE') ? saved : null;
+  });
 
-  const login = (selectedRole: Role) => setRole(selectedRole);
-  const logout = () => setRole(null);
+  const login = (selectedRole: Role) => {
+    setRole(selectedRole);
+    if (selectedRole) {
+      localStorage.setItem('userRole', selectedRole);
+    }
+  };
+
+  const logout = () => {
+    setRole(null);
+    localStorage.removeItem('userRole');
+  };
 
   return (
     <AuthContext.Provider value={{ role, login, logout }}>

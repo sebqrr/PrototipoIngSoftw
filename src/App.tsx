@@ -12,6 +12,7 @@ import DashboardMedico from './pages/DashboardMedico';
 import PortalPaciente from './pages/PortalDelPaciente';
 import SimuladorFinanciero from './pages/SimuladorFinanciero';
 import EducacionPage from './pages/paciente/EducacionPage';
+import ImprimirFichaPage from './pages/paciente/ImprimirFichaPage';
 
 // Módulos Médico
 import DashboardPage from './pages/medico/DashboardPage';
@@ -58,6 +59,7 @@ function ProtectedRoutes() {
           <Route path="/paciente" element={<PortalPaciente />} />
           <Route path="/simulador" element={<SimuladorFinanciero />} />
           <Route path="/educacion/:tema" element={<EducacionPage />} />
+          <Route path="/paciente/imprimir" element={<ImprimirFichaPage />} />
         </Route>
       )}
     </Routes>

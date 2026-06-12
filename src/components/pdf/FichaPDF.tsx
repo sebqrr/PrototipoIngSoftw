@@ -46,7 +46,7 @@ export function FichaPDF({ patient, mediciones, riesgo, chartsImage }: FichaPDFP
             <Text style={styles.headerSubtitle}>Generado el {new Date().toLocaleDateString()} a las {new Date().toLocaleTimeString()} (CLT)</Text>
           </View>
           <View style={styles.logoContainer}>
-            <Text style={{ fontWeight: 'bold', color: '#2563eb' }}>MediConnect Pro</Text>
+            <Text style={{ fontWeight: 'bold', color: '#2563eb' }}>PrevenciónCardio UANDES</Text>
             <Text style={{ fontSize: 8, color: '#64748b' }}>Plataforma Médica Avanzada</Text>
           </View>
         </View>
@@ -111,10 +111,10 @@ export function FichaPDF({ patient, mediciones, riesgo, chartsImage }: FichaPDFP
           </View>
           {patient.recetas?.map((r, i) => (
             <View key={`r-${i}`} style={styles.tableRow}>
-              <View style={[styles.tableCell, {width: '20%'}]}><Text>{new Date(r.fechaEmision).toLocaleDateString()}</Text></View>
+              <View style={[styles.tableCell, {width: '20%'}]}><Text>{new Date(r.fechaHora || r.fecha).toLocaleDateString()}</Text></View>
               <View style={[styles.tableCell, {width: '80%', fontSize: 8}]}>
                 {r.medicamentos.map((m, j) => (
-                  <Text key={`m-${j}`}>{m.nombre} - {m.dosis} - {m.frecuencia} - {m.duracion}. Ind: {m.indicacion}</Text>
+                  <Text key={`m-${j}`}>{m.nombre} ({m.diasTratamiento ? `${m.diasTratamiento} días` : 'Continuo'}) - Ind: {m.indicacion}</Text>
                 ))}
               </View>
             </View>

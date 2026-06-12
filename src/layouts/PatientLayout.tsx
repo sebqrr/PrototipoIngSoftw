@@ -16,7 +16,7 @@ export default function PatientLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Barra de Navegación Superior (Top Navbar) */}
-      <header className="bg-white border-b border-border sticky top-0 z-10 shadow-sm">
+      <header className="bg-white border-b border-border sticky top-0 z-10 shadow-sm print:hidden">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           
           <div className="flex items-center gap-4">

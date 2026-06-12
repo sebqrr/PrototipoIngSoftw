@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Bell, BookOpen, CheckCircle, Download, Activity, Heart, Calculator } from 'lucide-react';
+import { Home, Bell, BookOpen, CheckCircle, Download, Activity, Heart, Calculator, Printer } from 'lucide-react';
 import { db } from '@/db/mockDb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
 import { calcularEdad, calcularRiesgoSCORE2, configRiesgo } from '@/lib/clinical';
 import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import { FichaPDF } from '@/components/pdf/FichaPDF';
-import { toPng } from 'html-to-image';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function PortalPaciente() {
   const [pacientes, setPacientes] = useState(db.getAll());
@@ -34,34 +34,9 @@ export default function PortalPaciente() {
     }
   }, []);
 
-  const handleExportPDF = async (pacienteTarget: any, riesgoTarget: string) => {
-    setIsExporting(true);
-    try {
-      const container = document.getElementById('charts-export-container');
-      let chartsImage = undefined;
-      if (container) {
-        chartsImage = await toPng(container, { pixelRatio: 2, backgroundColor: '#ffffff' });
-      }
-
-      const blob = await pdf(
-        <FichaPDF patient={pacienteTarget} mediciones={pacienteTarget.mediciones} riesgo={riesgoTarget} chartsImage={chartsImage} />
-      ).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Historia_Clinica_${pacienteTarget.rut}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-
-      db.logAction(`Paciente (${pacienteTarget.rut})`, 'Descarga de Datos Clínicos', `Paciente descargó copia de historia clínica PDF.`, '192.168.1.55');
-      alert("Descarga autorizada e iniciada.\nEvento registrado con éxito en el Log de Auditoría Clínica.");
-    } catch (error) {
-      console.error("Error generando PDF:", error);
-      alert("Ocurrió un error al generar el PDF.");
-    } finally {
-      setIsExporting(false);
-    }
+  const handleExportPDF = () => {
+    // Abrimos la nueva pestaña de impresión que contiene los gráficos nativamente y el botón para imprimir (PDF del navegador)
+    window.open('/paciente/imprimir', '_blank');
   };
 
   const paciente = pacientes.find(p => p.id === storedId);
@@ -108,30 +83,21 @@ export default function PortalPaciente() {
           <h2 className="text-2xl font-bold text-foreground">Tu Portal de Salud</h2>
           <p className="text-sm text-muted-foreground mt-1">Revisa tus métricas, registra tu presión y aprende sobre tu condición.</p>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
           <Button 
             variant="outline" 
             className="shrink-0 font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
-            onClick={() => handleExportPDF(paciente, riesgo)}
-            disabled={isExporting}
+            onClick={() => handleExportPDF()}
           >
-            <Download className="w-4 h-4 mr-2" /> 
-            {isExporting ? 'Generando PDF...' : 'Descargar Ficha Clínica (PDF)'}
+            <Printer className="w-4 h-4 mr-2" /> 
+            Descargar Ficha Médica
           </Button>
         </div>
       </div>
 
-      {/* Contenedor Oculto para capturar el gráfico en el PDF */}
-      <div className="absolute -left-[9999px] top-0 w-[800px] h-[400px] bg-white p-8" id="charts-export-container">
-        <h3 className="text-xl font-bold mb-4 text-slate-800">Evolución de Presión Arterial</h3>
-        <LineChart width={736} height={300} data={[...paciente.mediciones].reverse()}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="fecha" />
-          <YAxis domain={['auto', 'auto']} />
-          <Line type="monotone" dataKey="presionSistolica" stroke="#ef4444" strokeWidth={2} name="Sistólica" isAnimationActive={false} />
-          <Line type="monotone" dataKey="presionDiastolica" stroke="#3b82f6" strokeWidth={2} name="Diastólica" isAnimationActive={false} />
-        </LineChart>
-      </div>
+      {/* Eliminamos el contenedor oculto ya que usaremos la impresión nativa */}
+
+
 
       {/* Resumen Clínico */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

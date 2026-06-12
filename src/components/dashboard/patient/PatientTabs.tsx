@@ -60,7 +60,8 @@ export function PatientTabs({ currentPatient, mediciones, edadActual, riesgoActu
       if (container) {
         chartsImage = await toPng(container, {
           pixelRatio: 2,
-          backgroundColor: '#ffffff'
+          backgroundColor: '#ffffff',
+          skipFonts: true // Evita errores de CORS al procesar Google Fonts
         });
       }
 
